@@ -1,0 +1,127 @@
+<launch>
+
+    <!-- frame arguments -->
+    <arg name="robot_id" default="0" doc="unique robot identifier"/>
+    <arg name="robot_frame" doc="robot base frame (i.e., robot pose)"/>
+    <arg name="odom_frame" default="odom" doc="robot map frame"/>
+    <arg name="map_frame" default="map" doc="backend scene graph frame"/>
+    <arg name="scene_graph_number" default="2" doc="scene graph number"/>
+    <arg name="occlusion_check" default="true" doc="whether to use occlusion check when determining if a point is in view"/>
+
+    <!-- parameter files -->
+    <arg name="dataset_name"/>
+    <arg name="ablation_name" default="$(arg dataset_name)"/>
+    <arg name="config_path" default="$(find clio_ros)/config/$(arg dataset_name)/pipeline.yaml"/>
+    <arg name="ablation_config_path" default="$(find clio_ros)/config/$(arg dataset_name)/$(arg ablation_name).yaml"/>
+    <!-- visualization parameters -->
+    <arg name="gvd_places_sinks" default="$(find hydra_ros)/config/sinks/gvd_places_sinks.yaml"/>
+    <arg name="active_window_sinks" default="$(find hydra_ros)/config/sinks/active_window_sinks.yaml"/>
+
+    <!-- sensor configuration -->
+    <arg name="sensor_min_range" default="0.1" doc="minimum sensor range in meters"/>
+    <arg name="sensor_max_range" default="5.0" doc="maximum sensor range in meters"/>
+    <arg name="exit_after_clock" default="false"/>
+
+    <!-- logging output -->
+    <arg name="log_path" default="$(find hydra)/output/$(arg dataset_name)"/>
+
+    <!-- log message controls -->
+    <arg name="min_glog_level" default="0"/>
+    <arg name="verbosity" default="0"/>
+    <arg name="glog_to_file" default="false"/>
+    <arg name="glog_dir" if="$(arg glog_to_file)" default="$(log_path)"/>
+    <arg name="glog_file_args" value="$(eval '--logtostderr=0 --log_dir=' + glog_dir if glog_to_file else '')"/>
+
+    <!-- development args -->
+    <arg name="debug" default="false"/>
+    <arg name="print_missing" default="false" doc="have config utilities print all missing parameters when parsing configs"/>
+    <arg name="launch_prefix" value="$(eval 'gdb -ex run --args' if debug else '')"/>
+
+    <arg name="run_task_server" default="true"/>
+    <!-- <arg name="object_tasks" default="[]" doc="List of object tasks"/>
+    <arg name="object_tasks_file" default="/home/apple/Work/catkin_ws/datasets/tasks_habitat_office.yaml" doc="File to read object tasks from (preferred over object_tasks)"/>
+    <arg name="place_tasks" default="[]" doc="List of place tasks"/>
+    <arg name="place_tasks_file" default="/home/apple/Work/catkin_ws/datasets/region_tasks_habitat_office.yaml" doc="File to read place tasks from (preferred over place_tasks)"/> -->
+    <arg name="verbose_task_server" default="true"/>
+    <group if="$(arg run_task_server)">
+        <node pkg="clio_ros" type="task_server" name="task_server"
+              output="$(eval 'screen' if verbose_task_server else 'log')"
+              required="true">
+            <param name="object_tasks_file" value="$(arg object_tasks_file)"/>
+            <rosparam subst_value="true">{object_tasks: $(arg object_tasks)}</rosparam>
+            <param name="place_tasks_file" value="$(arg place_tasks_file)"/>
+            <rosparam subst_value="true">{place_tasks: $(arg place_tasks)}</rosparam>
+        </node>
+    </group>
+
+    <remap from="clio_node/objects/features" to="task_server/objects"/>
+    <remap from="clio_node/places/features" to="task_server/places"/>
+    <!-- <launch-prefix='bash -lc "HEAPTRACK_OUTPUT=/tmp/heaptrack.%p exec heaptrack  \"$0\" \"$@\""'> -->
+    <node pkg="hydra_ros" type="hydra_ros_node" name="clio_node"
+          launch-prefix="$(arg launch_prefix)"
+          args="--minloglevel=$(arg min_glog_level) -v=$(arg verbosity) $(arg glog_file_args)"
+          output="$(eval 'log' if glog_to_file else 'screen')"
+          required="true">
+        <env name="TERM" value="xterm-256color"/>
+        <param name="print_missing" value="$(arg print_missing)"/>
+        <param name="scene_graph_number" value="$(arg scene_graph_number)"/>
+        <!-- robot configuration -->
+        <param name="robot_id" value="$(arg robot_id)"/>
+        <param name="odom_frame" value="$(arg odom_frame)"/>
+        <param name="robot_frame" value="$(arg robot_frame)"/>
+        <param name="map_frame" value="$(arg map_frame)"/>
+        <!-- required clio settings -->
+        <rosparam>{features: {type: FeatureReceiver}} </rosparam>
+        <param name="features/occlusion_check" value="$(arg occlusion_check)" type="bool"/>
+        <rosparam>{allow_plugins: true, paths: [khronos, khronos_ros, clio]}</rosparam>
+        <rosparam ns="layer_id_map">{segments: s, objects: o, places: p, rooms: r}</rosparam>
+        <rosparam ns="frontend/enable_mesh_objects">false</rosparam>
+        <!-- <rosparam ns="frontend/graph_updater/layer_updates">{objects: {prefix: s, target_layer: 1}}</rosparam> -->
+        <rosparam ns="frontend/graph_updater/layer_updates">{objects: {prefix: o, target_layer: 2}}</rosparam>
+        <rosparam ns="frontend/graph_connector/layers">[{parent_layer: 3, child_layers: [{layer: 1}, {layer: 2}]}]</rosparam>
+        <!-- pipeline configs -->
+        <rosparam file="$(arg config_path)" subst_value="true"/>
+        <rosparam file="$(arg ablation_config_path)" subst_value="true"/>
+        <!-- visualization -->
+        <rosparam file="$(arg gvd_places_sinks)" ns="frontend/freespace_places"/>
+        <rosparam file="$(arg active_window_sinks)" ns="active_window"/>
+        <!-- scene number-->
+        <param name="scene_number" value="$(arg scene_number)"/>
+    </node>
+
+    <arg name="start_visualizer" default="true" doc="Start visualizer node"/>
+    <arg name="verbose_visualizer" default="false" doc="Log visualizer output to screen"/>
+    <arg name="visualizer_verbosity" default="0" doc="Glog verbosity for visualizer"/>
+    <arg name="visualizer_config" default="$(find clio_ros)/config/visualizer/default.yaml"/>
+
+    <!-- You should also change visualizers if you change scene graph number-->
+    <group if="$(arg start_visualizer)">
+        <node pkg="hydra_visualizer" type="hydra_visualizer_node" ns="clio_visualizer" name="graph0"
+              output="$(eval 'screen' if verbose_visualizer else 'log')"
+              args="-alsologtostderr -colorlogtostderr -v=$(arg visualizer_verbosity)">
+            <remap from="~dsg"               to="/clio_node/graph0/backend/dsg"/>
+            <remap from="~objects/features"  to="/task_server/objects"/>
+            <remap from="~places/features"   to="/task_server/places"/>
+            <param name="visualizer_frame" value="$(arg map_frame)"/>
+            <param name="graph/type" value="GraphFromRos"/>
+            <rosparam file="$(arg visualizer_config)" subst_value="true"/>
+        </node>
+        <!-- <node pkg="hydra_visualizer" type="hydra_visualizer_node" ns="clio_visualizer" name="graph1"
+              output="$(eval 'screen' if verbose_visualizer else 'log')"
+              args="-alsologtostderr -colorlogtostderr -v=$(arg visualizer_verbosity)">
+            <remap from="~dsg"               to="/clio_node/graph1/backend/dsg"/>
+            <remap from="~objects/features"  to="/task_server/objects"/>
+            <remap from="~places/features"   to="/task_server/places"/>
+            <param name="visualizer_frame" value="$(arg map_frame)"/>
+            <param name="graph/type" value="GraphFromRos"/>
+            <rosparam file="$(arg visualizer_config)" subst_value="true"/>
+        </node> -->
+    </group>
+
+    <arg name="start_rviz" default="true" doc="Start rviz"/>
+    <arg name="rviz_config" default="$(find clio_ros)/rviz/default.rviz"/>
+    <group if="$(arg start_rviz)">
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_config)"/>
+    </group>
+
+</launch>

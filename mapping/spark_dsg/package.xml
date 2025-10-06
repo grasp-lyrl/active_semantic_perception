@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>spark_dsg</name>
+  <version>1.0.6</version>
+  <description>Dynamic Scene Graph (DSG) type definitions and core library code</description>
+
+  <author email="na26933@mit.edu">Nathan Hughes</author>
+  <author email="yunchang@mit.edu">Yun Chang</author>
+  <author email="arosinol@mit.edu">Toni Rosinol</author>
+  <maintainer email="na26933@mit.edu">Nathan Hughes</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+  <depend>eigen</depend>
+  <depend>libzmqpp-dev</depend>
+  <depend>nlohmann-json-dev</depend>
+  <depend>python3-dev</depend>
+
+  <export>
+      <build_type>cmake</build_type>
+  </export>
+
+</package>

@@ -1,0 +1,54 @@
+---
+name: ade20k_mp3d
+distinct: true
+offset: -1
+groups:
+  - {name: void, labels: []}
+  - {name: wall, labels: [1]}
+  - {name: floor, labels: [4]}
+  - {name: chair, labels: [20, 31, 32, 76]}
+  - {name: door, labels: [15, 59]}
+  - {name: table, labels: [16, 65]}
+  - {name: picture, labels: [23, 101]}
+  - {name: cabinet, labels: [11]}
+  - {name: cushion, labels: [40, 58]}
+  - {name: window, labels: [9]}
+  - {name: sofa, labels: [24, 98]}
+  - {name: bed, labels: [8]}
+  - {name: curtain, labels: [19]}
+  - {name: chest_of_drawers, labels: [45]}
+  - {name: plant, labels: [5, 18, 67, 73, 126]}
+  - {name: sink, labels: [48]}
+  - {name: stairs, labels: [54, 60, 122]}
+  - {name: ceiling, labels: [6]}
+  - {name: toilet, labels: [66]}
+  - {name: stool, labels: [111]}
+  - {name: towel, labels: [82]}
+  - {name: mirror, labels: [28]}
+  - {name: tv_monitor, labels: [90, 142, 144]}
+  - {name: shower, labels: [146]}
+  - {name: column, labels: [43, 94]}
+  - {name: bathtub, labels: [38]}
+  - {name: counter, labels: [46, 71, 74, 100]}
+  - {name: fireplace, labels: [50]}
+  - {name: lighting, labels: [37, 83]}
+  - {name: railing, labels: [39, 96]}
+  - {name: shelving, labels: [25]}
+  - {name: blinds, labels: [64]}
+  - {name: seating, labels: [70]}
+  - {name: board_panel, labels: [44, 145]}
+  - {name: furniture, labels: [34, 36, 63, 118, 120]}
+  - {name: appliances, labels: [51, 72, 108, 119, 125, 130, 147]}
+  - {name: clothes, labels: [93]}
+  - {name: objects, labels: [29, 42, 57, 68, 75, 86, 99, 109, 116, 128, 135, 136,
+      138, 139, 140, 143, 149, 150]}
+  - {name: misc, labels: [2, 3, 7, 10, 12, 13, 14, 17, 21, 22, 26, 27, 30, 33, 35,
+      41, 47, 49, 52, 53, 55, 56, 61, 62, 69, 77, 78, 79, 80, 81, 84, 85, 87, 88,
+      89, 91, 92, 95, 97, 102, 103, 104, 105, 106, 107, 110, 112, 113, 114, 115, 117,
+      121, 123, 124, 127, 129, 131, 132, 133, 134, 137, 141, 148]}
+specified_colors:
+  - {name: void, source: raw, color: [0.0, 0.0, 0.0]}
+  - {name: misc, source: raw, color: [0.2, 0.2, 0.2]}
+  - {name: floor, source: raw, color: [0.75, 0.75, 0.71]}
+  - {name: wall, source: raw, color: [0.0, 0.4, 0.2]}
+  - {name: ceiling, source: raw, color: [0.8, 0.0, 0.4]}

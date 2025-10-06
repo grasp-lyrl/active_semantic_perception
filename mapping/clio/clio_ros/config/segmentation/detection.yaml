@@ -1,0 +1,10 @@
+---
+detection:
+  type: yoloe
+  model_name: yoloe-v8l-seg.pt
+  confidence: 0.25
+  iou: 0.5
+  output_size: 640
+clip_model:
+  type: clip
+  model_name: ViT-L/14  # ViT-L/14, ViT-B/32

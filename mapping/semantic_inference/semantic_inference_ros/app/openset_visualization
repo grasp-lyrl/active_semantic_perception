@@ -1,0 +1,109 @@
+"""Visualizer utilities for openset image."""
+import pathlib
+import distinctipy
+import numpy as np
+import cv2
+import yaml
+
+def parse_tasks_from_yaml(yaml_file):
+    prompts = []
+    with open(yaml_file, "r") as stream:
+        prompts = [prompt for prompt in yaml.safe_load(stream)]
+    return prompts
+
+def _random_cmap(N):
+    print(f"Making colormap of {N} colors")
+    cmap = distinctipy.get_colors(N, pastel_factor=0.2, rng=0)
+    return (255 * np.array(cmap)[:, :3]).astype(np.uint8)
+
+
+def _load_cmap_from_csv(cmap_file):
+    if cmap_file is None:
+        return None
+
+    cmap_path = pathlib.Path(cmap_file).expanduser().absolute()
+    if not cmap_path.exists():
+        print(f"Colormap '{cmap_file}' does not exist")
+        return None
+
+    print(f"Loading colormap from '{cmap_file}'")
+    colors = []
+    with cmap_path.open("r") as fin:
+        for line in fin:
+            colors.append(line.split(","))
+
+    colors = colors[1:]
+    colors = [[int(x) for x in c[1:4]] for c in colors]
+    return np.array(colors).astype(np.uint8)
+
+
+class ImageVisualizer:
+    """Image visualizer."""
+
+    def __init__(
+        self,
+        tasks,
+        model_name="ViT-L/14",
+        cmap_file=None,
+        use_lerf_loss=False,
+        cannonical_phrases="object*stuff*things*texture",
+    ):
+        """Make a visualizer."""
+        self._score = Score(
+            tasks,
+            model_name=model_name,
+            use_lerf_loss=use_lerf_loss,
+            cannonical_phrases=cannonical_phrases,
+        )
+
+        self.cmap = _load_cmap_from_csv(cmap_file)
+        if self.cmap is None:
+            self.cmap = _random_cmap(len(self._score.tasks))
+
+    @classmethod
+    def from_task_file(cls, task_filepath, **kwargs):
+        """Read tasks from file."""
+        tasks = parse_tasks_from_yaml(task_filepath)
+        task_str = "*".join(tasks)
+        return cls(task_str, **kwargs)
+
+    def visualize(
+        self,
+        img,
+        results,
+        alpha=0.5,
+        threshold=0.2,
+        draw_labels=True,
+        font_scale=0.5,
+        text_color=(255, 255, 255),
+    ):
+        """Publish image."""
+        results = results.cpu()
+        scores = self._score.get_scores(results.features)
+        best_tasks = np.argmax(scores, axis=0)
+        best_scores = np.max(scores, axis=0)
+        valid = np.squeeze(np.argwhere(best_scores >= threshold))
+        if len(valid.shape) == 0:
+            valid = valid.reshape(1)
+
+        colors = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
+        for idx in valid:
+            cmap_idx = int(best_tasks[idx]) % self.cmap.shape[0]
+            colors[results.masks[idx] > 0, :] = self.cmap[cmap_idx]
+
+        result = ((1 - alpha) * img + alpha * colors).astype(np.uint8).copy()
+        if draw_labels:
+            for idx in valid:
+                task_name = self._score.tasks[best_tasks[idx]]
+                height = (results.boxes[idx, 1] + results.boxes[idx, 3]) / 2
+                center = (int(results.boxes[idx, 0]), int(height))
+                result = cv2.putText(
+                    result,
+                    task_name,
+                    center,
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale,
+                    text_color,
+                )
+
+        return result

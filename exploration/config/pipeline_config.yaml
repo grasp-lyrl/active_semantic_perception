@@ -1,0 +1,166 @@
+# -----------------------------------------------------------------------------
+# Pipeline Configuration
+# -----------------------------------------------------------------------------
+SEED: 42
+
+ENABLE_USER_APPROVAL: false
+MANUAL_REJECTION_LIMIT: 2
+
+# --- Habitat Simulation ---
+### These parameters should be set according to where you downloaded and stored the HM3D dataset
+SCENE_DATASET_CONFIG: "/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/hm3d_annotated_basis.scene_dataset_config.json"
+# Scene 00871
+SCENE_ID: "/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/val/00871-VBzV5z6i1WS/VBzV5z6i1WS.basis.glb"
+SCENE_NUMBER: 871
+
+# Scene 00853
+# SCENE_ID = "/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/val/00853-5cdEh9F2hJL/5cdEh9F2hJL.basis.glb"
+# SCENE_NUMBER: 853
+
+# Scene 00573
+# SCENE_ID = "/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/train/00573-1zDbEdygBeW/1zDbEdygBeW.basis.glb"
+# SCENE_NUMBER: 573
+
+AGENT_HEIGHT: 1.1
+
+# --- ROS Topics & Frames ---
+### RGB and Depth image topics should be in sync with Clio camera topics
+RGB_TOPIC: "/dominic/forward/color/image_raw"
+DEPTH_TOPIC: "/dominic/forward/depth/image_rect_raw"
+MID_PATH_TOPIC: "/planned_mid_path"
+LOCAL_PATH_TOPIC: "/planned_local_path"
+TARGET_POSE_TOPIC: "/target_visualization_pose"
+OCCUPANCY_GRID_TOPIC_PREFIX: "/clio_node/graph"
+### This should match the number of scene graph built in Clio
+OCCUPANCY_GRAPH_COUNT: 2
+WORLD_FRAME: "world"
+HABITAT_FRAME: "world_habitat"
+AGENT_FRAME: "dominic/forward_link"
+
+# --- File Paths ---
+### Directories where you store all the output files
+BASE_DIRECTORY: "/home/apple/Work/scene_graph_processing/Summer_research/Temp_00871_Test"
+WORKING_DIRECTORY: null
+### Directories that Clio stores the scene graph
+MAPPING_DIRECTORY: "/home/apple/Work/exp_pipeline_ws/src/hydra/output/realsense/backend"
+DSG_SOURCE_PATHS: null
+
+# --- DSG Configuration ---
+FILE_WAIT_TIMEOUT_S: 10
+MIN_DSG_FILE_SIZE_BYTES: 1000
+
+# --- LLM Configuration ---
+### load dynamically in Python with os.getenv, make sure you set it
+GOOGLE_API_KEY: null
+LLM_MODEL_NAME: "gemini-2.5-pro"
+LLM_COMPLETION_PROMPT: |
+  You are a scene expansion assistant that adds plausible new objects and rooms to an existing spatial layout.
+
+  Context:
+  - Input includes:
+      1. YAML scene graph of current layout.
+      2. Visual images matching the YAML.
+  - Node types: object, room, nothing (confirmed empty), structure (impassable barrier like a wall).
+  - Units: meters (m).
+
+  Goal:
+  - Add as many new objects and rooms as are semantically and geometrically plausible. Place new objects in both existing and new rooms.
+  - Create edges between:
+      - New objects and rooms
+      - New rooms and rooms
+  - Do NOT connect existing objects to existing rooms.
+  - Ensure all additions are semantically and geometrically logical.
+
+  Rules:
+  1. Output one YAML code block with ONLY new items.
+  2. Structure nodes (Wall, Curtain, Window, Blind) are impassable if there is no door on them. Items cannot be placed across them unless a 'door' exists. This rule is the most important one.
+  3. New objects must NOT overlap with:
+      - nothing nodes
+      - structure nodes
+      - existing object nodes
+  4. When adding a new room, position it logically relative to adjacent rooms and their objects, ensuring the new room's own objects are not placed unusually close to objects in another room.
+  5. Do not create new 'nothing', 'structure', or 'door' nodes. Scene has no outdoor space or dining room. Scene may contain more than one bedroom and more than one bathroom.
+  6. If a door exists on a structure node and no room is currently defined on the other side, create a new room behind it.
+  7. Follow exact YAML schema as the input.
+
+LLM_REFINE_PROMPT: |
+  You are a scene integration assistant that refines and places new elements into an existing scene graph.
+
+  Context:
+  - 'original_scene': the existing scene graph.
+  - 'new_items': proposed additions to the scene.
+  - Images: horizontal slices of the combined scene (original_scene + new_items).
+
+  Goal:
+  Integrate 'new_items' into the scene logically and consistently, making necessary adjustments, deletions and additions.
+
+  Steps:
+  1. Refine Attributes:
+      - For every node in 'new_items', adjust 'position', 'orientation', and 'dimension' for logical placement. Room nodes do not have 'dimension' or 'orientation'.
+
+  2. Prune and Expand Scene:
+      - Delete nodes that are nonsensical or cannot be placed plausibly.
+      - Add complementary nodes where needed for realism.
+      - Update edges in 'new_items' for semantic and geometric consistency with 'original_scene'.
+      - Ensure each room connects to at least one other room to indicate semantic adjacency.
+
+  Rules:
+  1. Structure nodes (Wall, Curtain, Window, Blind) are impassable if there is no door on them. Items cannot be placed across them unless a 'door' exists. This rule is the most important one.
+  2. Do not create 'nothing', 'structure', or 'door' nodes. Scene has no outdoor space or dining room. Scene may contain more than one bedroom and more than one bathroom.
+  3. Any object node in the final 'new_items' (original or added) must NOT overlap with:
+      - nothing nodes
+      - structure nodes
+      - existing object nodes
+  4. Any room node in the final 'new_items' (original or added) should be positioned logically relative to adjacent rooms and their objects, ensuring the room's own objects are not placed unusually close to objects in another room.
+  5. All units are in meters (m).
+  6. If a door exists on a structure node and no room is currently defined on the other side, create a new room behind it.
+  7. Output only the final refined 'new_items' as a single valid YAML code block.
+
+LLM_ENSEMBLE_COUNT: 4
+LLM_REFINE_TIMES: 1
+MAX_PARALLEL_WORKERS: 8
+
+# --- Navigation Parameters ---
+# How many degrees the agent turns at each step
+TURN_STEP_DEG: 1.5
+# How many meters the agent moves forward at each step
+MOVE_STEP_M: 0.075
+# Distance from the target point at which the agent stops moving
+DISTANCE_THRESHOLD_M: 0.25
+# Angle difference from the target orientation at which the agent stops turning and begins moving forward
+TURN_THRESHOLD_RAD: 0.17453292519943295   # math.radians(10)
+# The radius we want to inflate obstacles by
+INFLATION_RADIUS: 0
+# The minimum navigation time in seconds (a workaround for only having occupancy grid in the front of the agent). This ensures the agent turns long enough
+# to find a valid path.
+MINIMUM_NAVIGATION_DURATION: 13.0
+# These two parameters are not used
+PATH_LENGTH_FACTOR: 5
+UNKNOWN_CELL_THRESHOLD: 0.4
+# Maximum number of attempts to move forward, introduced due to the limited scope of the local planner when the agent turns around a corner
+MAXIMUM_CORNER_ATTEMPTS: 5
+
+# --- Uncertainty Calculation ---
+# Number of candidate viewpoints to sample
+UNCERTAINTY_SAMPLES: 300
+# Number of perturbations to apply to each scene graph (total graphs = perturbations + original)
+UNCERTAINTY_PERTURBATIONS: 3
+# Minimum and maximum perturbation applied to object positions in meters
+UNCERTAINTY_NOISE_LOW: -0.25
+UNCERTAINTY_NOISE_HIGH: 0.25
+# Unlikely to use the logic, so not important.
+MINIMUM_DISTANCE_DIFFERENCE: 2.0
+# Weights for different components of the uncertainty score
+UNCERTAINTY_ROOM_WEIGHT: 1.0
+
+# --- Camera Configuration ---
+### These parameters should match the intrinsic parameters of the camera used in the simulation
+CAMERA_CONFIG:
+  fx: 320.0
+  fy: 240.0
+  cx: 319.5
+  cy: 239.5
+  width: 640
+  height: 480
+  near_clip: 0.5
+  max_range: 3.0

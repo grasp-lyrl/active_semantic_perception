@@ -1,0 +1,96 @@
+/* -----------------------------------------------------------------------------
+ * Copyright 2022 Massachusetts Institute of Technology.
+ * All Rights Reserved
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Research was sponsored by the United States Air Force Research Laboratory and
+ * the United States Air Force Artificial Intelligence Accelerator and was
+ * accomplished under Cooperative Agreement Number FA8750-19-2-1000. The views
+ * and conclusions contained in this document are those of the authors and should
+ * not be interpreted as representing the official policies, either expressed or
+ * implied, of the United States Air Force or the U.S. Government. The U.S.
+ * Government is authorized to reproduce and distribute reprints for Government
+ * purposes notwithstanding any copyright notation herein.
+ * -------------------------------------------------------------------------- */
+#pragma once
+#include <config_utilities/factory.h>
+#include <hydra/common/module.h>
+#include <ros/ros.h>
+#include <semantic_inference_msgs/FeatureVectorStamped.h>
+#include <sensor_msgs/Image.h>
+
+#include "hydra_ros/utils/tf_lookup.h"
+
+namespace hydra {
+
+struct SynchronizedSubscriber;
+
+using semantic_inference_msgs::FeatureVectorStamped;
+struct SyncedMessage {
+  FeatureVectorStamped::ConstPtr features;
+  sensor_msgs::Image::ConstPtr depth;
+  std::string sensor_name;
+};
+
+class FeatureReceiver : public Module {
+ public:
+  struct Config {
+    //! Node handle namespace (defaults to matching data receivers)
+    std::string ns = "~input";
+    //! Individual subscriber queue size
+    size_t queue_size = 10;
+    //! Lookup settings for poses
+    TFLookup::Config tf_lookup;
+    //! Sensors to not subscribe to
+    std::vector<std::string> sensors_to_exclude;
+    //! Whether to use occlusion check when determining if a point is in view
+    bool occlusion_check = true;
+  } const config;
+
+  FeatureReceiver(const Config& config, int scene_graph_id);
+  virtual ~FeatureReceiver();
+  void start() override;
+  void stop() override;
+  void save(const LogSetup& setup) override;
+  std::string printInfo() const override;
+  void processingQueue();
+
+ protected:
+  std::atomic<bool> should_shutdown_{false};
+
+ private:
+  TFLookup lookup_;
+  ros::NodeHandle nh_;
+  std::vector<std::unique_ptr<SynchronizedSubscriber>> subs_;
+  std::thread processing_thread_;
+  MessageQueue<SyncedMessage>::Ptr raw_message_queue_;
+  int scene_graph_id_;
+
+  inline static const auto registration_ =
+      config::RegistrationWithConfig<FeatureReceiver, FeatureReceiver, Config, int>(
+          "FeatureReceiver");
+};
+
+void declare_config(FeatureReceiver::Config& config);
+
+}  // namespace hydra

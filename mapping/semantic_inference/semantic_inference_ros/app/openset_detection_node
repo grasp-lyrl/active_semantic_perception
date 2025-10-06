@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""Node that runs openset detection."""
+from dataclasses import dataclass, field
+
+import rospy
+import semantic_inference.models as models
+import semantic_inference_ros
+import torch
+from semantic_inference import Config
+from semantic_inference_msgs.msg import DetectionResults, FeatureVectorStamped
+from semantic_inference_ros import Conversions, ImageWorkerConfig
+from sensor_msgs.msg import Image
+import cv2
+import numpy as np
+
+def _color(idx: int) -> tuple:
+    """Generate a deterministic BGR color from class index."""
+    np.random.seed(idx)
+    rgb = np.random.randint(0, 255, size=3)
+    return int(rgb[2]), int(rgb[1]), int(rgb[0])  # BGR for OpenCV
+
+class Visualization:
+    """Visualization namespace for openset detection."""
+
+    @classmethod
+    def visualize_detection(cls, results, cv_image):
+        """
+        Create a visualization image from detection results.
+
+        Args:
+            header (std_msgs.msg.Header): Original image header
+            results (semantic_inference.DetectionResults): Detection results to visualize
+        """
+
+        viz_image = cv_image.copy()
+
+        # 1. Draw Masks (as additive highlights) onto result_image
+        masks_data = results.masks.numpy()
+        bboxes = results.boxes.numpy()
+        labels = results.labels.numpy()
+        confs = results.confs.numpy()
+        
+        # Ensure iteration is safe if number of masks might not match boxes
+        num_detections = len(results.boxes)
+
+        for i in range(num_detections):
+            # Get class_id for the current detection/mask
+            class_id = int(labels[i])
+            color = _color(class_id)
+            mask = masks_data[i]
+
+            # Create a layer for the current colored mask
+            current_mask_color_layer = np.zeros_like(viz_image, dtype=np.uint8)
+            current_mask_color_layer[mask == 1] = color
+            
+            # Blend this mask layer (additively) onto the result_image
+            cv2.addWeighted(viz_image, 1.0, current_mask_color_layer, 0.4, 0, viz_image)
+
+        # 2. Draw Bounding Boxes and Text on top of result_image (which now includes masks)
+        for i, (xyxy, conf, cls) in enumerate(zip(bboxes, confs, labels)):
+            x1, y1, x2, y2 = xyxy.astype(int)
+            class_id = int(cls)
+            color = _color(class_id) # Or a distinct color for bboxes/text
+
+            # --- Draw Bounding Box ---
+            cv2.rectangle(viz_image, (x1, y1), (x2, y2), color, 1)
+            
+            # --- Prepare Label Text ---
+            label_text = results.mapping[class_id]
+            label = f"{label_text}: {conf * 100:.1f}%"
+
+            cv2.putText(
+                viz_image,
+                label,
+                (x1, max(y1 - 10, 0)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                color,
+                1,
+                cv2.LINE_AA,
+            )
+
+        return viz_image
+
+
+@dataclass
+class OpensetDetectionNodeConfig(Config):
+    """Configuration for ClipPublisherNode."""
+
+    worker: ImageWorkerConfig = field(default_factory=ImageWorkerConfig)
+    model: models.OpensetDetectorConfig = field(
+        default_factory=models.OpensetDetectorConfig
+    )
+
+
+class OpensetDetectionNode:
+    """Node to run openset detection."""
+
+    def __init__(self):
+        """Start subscriber and publisher."""
+        self.config = semantic_inference_ros.load_from_ros(
+            OpensetDetectionNodeConfig, ns="~"
+        )
+
+        rospy.loginfo(f"'{rospy.get_name()}': Initializing with {self.config.show()}")
+        device = models.default_device()
+        self._model = models.OpensetDetector(self.config.model).to(device)
+        # Should not call `self._model.eval()` here. Calling it inside wrapper.
+        rospy.loginfo(f"'{rospy.get_name()}': finished initializing!")
+
+        self._pub = rospy.Publisher("~semantic/image_raw", DetectionResults, queue_size=1)
+        self._clip_pub = rospy.Publisher(
+            "~semantic/feature", FeatureVectorStamped, queue_size=1
+        )
+        self._vis_pub = rospy.Publisher("~semantic/image_raw/visualization", Image, queue_size=1)
+        self._worker = semantic_inference_ros.ImageWorker(
+            self.config.worker, "~color/image_raw", self._spin_once
+        )
+        self._embedder = semantic_inference_ros.PromptEncoder(self._model.encoder)
+
+    def _spin_once(self, header, img):
+        with torch.no_grad():
+            ret = self._model(img, is_rgb_order=True)
+            if ret is None:
+                rospy.logwarn("No object detected")
+                return
+            else:
+                ret = ret.cpu()
+
+        msg = Conversions.to_detection_results(header, ret)
+        vis_image = Visualization.visualize_detection(ret, img)
+        vis_msg = Conversions.bridge.cv2_to_imgmsg(vis_image, encoding="rgb8")
+        vis_msg.header = header
+        self._vis_pub.publish(vis_msg)
+        self._pub.publish(msg)
+        self._clip_pub.publish(
+            Conversions.to_stamped_feature(header, ret.image_embedding)
+        )
+
+    def spin(self):
+        """Wait until ros shuts down."""
+        self._worker.spin()
+
+
+def main():
+    """Start a node."""
+    rospy.init_node("openset_detection_node")
+    semantic_inference_ros.setup_ros_log_forwarding()
+
+    node = OpensetDetectionNode()
+    node.spin()
+
+
+if __name__ == "__main__":
+    main()

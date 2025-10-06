@@ -1,0 +1,75 @@
+<launch>
+    <!-- Global arguments -->
+    <arg name="offline" default="false" />
+    <arg name="launch_rviz" default="false" />
+    <arg name="colored_pointcloud" default="true" />
+    <arg name="visualize_segmented_scene" default="true" />
+
+    <!-- Topics -->
+    <arg name="camera_frame" default="dominic/forward_link" />
+    <arg name="sensor_config" default="RealSense_D435i" />
+    <arg name="rgb_image_topic" default="/dominic/forward/color/image_raw" />
+    <arg name="rgb_camera_info_topic" default="/dominic/forward/color/camera_info" />
+    <arg name="depth_image_topic" default="/dominic/forward/depth/image_rect_raw" />
+
+    <!-- Use simulation time if offline -->
+    <param name="use_sim_time" value="$(arg offline)" />
+
+    <!-- VS-Graphs Node -->
+    <node pkg="vs_graphs" type="ros_rgbd" cwd="node" name="vs_graphs" output="screen">
+        <!-- Remaps -->
+        <remap from="/camera/rgb/image_raw" to="$(arg rgb_image_topic)"/>
+        <remap from="/camera/depth_registered/image_raw" to="$(arg depth_image_topic)"/>
+        <!-- Files -->
+        <param name="voc_file" type="string" value="$(find vs_graphs)/core/Vocabulary/ORBvoc.txt.bin"/>
+        <param name="settings_file" type="string" value="$(find vs_graphs)/config/RGB-D/$(arg sensor_config).yaml"/>
+        <param name="sys_params_file" type="string" value="$(find vs_graphs)/config/system_params.yaml"/>
+        <!-- Environment -->
+        <param name="static_transform" value="false" />
+        <param name="roll" type="double" value="0.0" />
+        <param name="yaw" type="double" value="1.5697" />
+        <param name="pitch" type="double" value="-1.5697" />
+        <!-- Reference Frames -->
+        <param name="frame_map" value="map" />
+        <param name="cam_frame_id" value="dominic/forward_link" />
+        <param name="world_frame_id" value="world" />
+        <!-- Visualization -->
+        <param name="enable_pangolin" value="false" />
+        <param name="publish_pointclouds" value="true" />
+        <param name="colored_pointcloud" value="$(arg colored_pointcloud)" />
+    </node>
+
+    <!-- Static Transforms -->
+    <node pkg="tf" type="static_transform_publisher" name="bc_to_se" args="0 -3 0 0 0 0 plane room 10" />
+    <node pkg="tf" type="static_transform_publisher" name="world_to_bc" args="0 0 0 0 0 0 world plane 10" />
+    <node pkg="tf" type="static_transform_publisher" name="camera_to_camera_optical" args="0 0 0 0 0 0 camera camera_color_optical_frame 10" />
+    <node pkg="tf" type="static_transform_publisher" name="world_to_map" args="0 0 0 0 0 0 world map 10" />
+
+    <!-- Trajectory Path Server -->
+    <!-- <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server_orb_slam3" output="screen" ns="vs_graphs" >
+        <param name="/target_frame_name" value="world" />
+        <param name="/source_frame_name" value="$(arg camera_frame)" />
+        <param name="/trajectory_update_rate" value="20.0" />
+        <param name="/trajectory_publish_rate" value="20.0" />
+    </node> -->
+    
+    <!-- RViz -->
+    <node if="$(arg launch_rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(find vs_graphs)/config/Visualization/vsgraphs_rgbd.rviz" output="screen" />
+
+    <!-- Depth to Point Cloud -->
+    <node pkg="nodelet" type="nodelet" name="nodelet_manager" args="manager" />
+    <node pkg="nodelet" type="nodelet" name="nodelet1" args="load depth_image_proc/point_cloud_xyzrgb nodelet_manager">
+        <remap from="rgb/camera_info" to="$(arg rgb_camera_info_topic)"/>
+        <remap from="rgb/image_rect_color" to="$(arg rgb_image_topic)"/>
+        <remap from="depth_registered/image_rect" to="$(arg depth_image_topic)"/>
+        <remap from="depth_registered/points" to="/camera/depth/points"/>
+    </node>
+
+    <node pkg="vs_graphs" type="camera_info_publisher.py" name="camera_info_publisher" output="screen"/>
+
+    <!-- Semantic Scene Segmenter Node -->
+    <node name="segmenter_ros" pkg="segmenter_ros" type="segmenter_yoso.py" output="screen">
+        <rosparam command="load" file="$(find segmenter_ros)/config/cfg_yoso.yaml" />
+        <param name="visualize" value="$(arg visualize_segmented_scene)" />
+    </node>
+</launch>

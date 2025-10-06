@@ -1,0 +1,16 @@
+params:
+  image_params:
+    image_size: 640
+  ros_topics:
+    raw_image_topic: "/dominic/forward/color/image_raw"
+    segmented_image_topic: "/camera/color/image_segment"
+    segmented_image_vis: "/camera/color/image_segment_vis"
+  model_params:
+    model_name: "PanopticFCN"
+    # model_path: "include/panoptic_fcn_star_r50_3x.pth"
+    model_path: "include/panoptic_fcn_star_r50_3x.pth"
+    # model_config: "src/panopticfcn/config/PanopticFCN-Star-R50-3x-FAST.yaml"
+    model_config: "src/panopticfcn/config/PanopticFCN-Star-R50-3x-FAST.yaml"
+    conf: 0.4
+  output:
+    classes: [52] # 43: Floor, 52: Wall

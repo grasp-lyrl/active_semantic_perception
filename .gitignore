@@ -1,0 +1,27 @@
+# Build and workspace files
+build/
+devel/
+*.o
+*.so
+*.a
+*.pt
+*.ts
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Mac/Linux system files
+.DS_Store
+Thumbs.db
+
+# Ignore nested git directories
+mapping/*/.git

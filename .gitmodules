@@ -1,0 +1,3 @@
+[submodule "mapping/spark_dsg/third_party/pybind11"]
+	path = mapping/spark_dsg/third_party/pybind11
+	url = https://github.com/pybind/pybind11.git

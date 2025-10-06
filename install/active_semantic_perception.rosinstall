@@ -1,0 +1,24 @@
+- git:
+    local-name: catkin_simple
+    uri: git@github.com:catkin/catkin_simple.git
+- git:
+    local-name: config_utilities
+    uri: git@github.com:MIT-SPARK/config_utilities.git
+    version: archive/ros_noetic
+- git:
+    local-name: kimera_rpgo
+    uri: git@github.com:MIT-SPARK/Kimera-RPGO.git
+- git:
+    local-name: kimera_pgmo
+    uri: git@github.com:MIT-SPARK/Kimera-PGMO.git
+    version: clio
+- git:
+    local-name: pose_graph_tools
+    uri: git@github.com:MIT-SPARK/pose_graph_tools.git
+    version: archive/ros_noetic
+- git:
+    local-name: spatial_hash
+    uri: git@github.com:MIT-SPARK/Spatial-Hash.git
+- git:
+    local-name: teaser_plusplus
+    uri: git@github.com:MIT-SPARK/TEASER-plusplus.git

@@ -1,0 +1,32 @@
+{
+  "name": "vsgraphs_ros1",
+  "remoteUser": "${env.USERNAME}",
+  "service": "vsgraphs",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-iot.vscode-ros",
+        "ms-vscode.cmake-tools",
+        "esbenp.prettier-vscode",
+        "GitHub.copilot",
+        "eamodio.gitlens",
+        "PKief.material-icon-theme"
+      ],
+      "settings": {
+        "files.associations": {
+          "*.rviz": "yaml",
+          "*.srdf": "xml",
+          "*.urdf": "xml",
+          "*.xacro": "xml"
+        }
+      }
+    }
+  },
+  "workspaceFolder": "/workspace",
+  "dockerComposeFile": "../docker/docker-compose.yml"
+}
