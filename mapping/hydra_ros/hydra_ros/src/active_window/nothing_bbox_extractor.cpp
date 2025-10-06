@@ -20,7 +20,7 @@ NothingBBoxExtractor::NothingBBoxExtractor(const Config& config)
                          1, 
                          &NothingBBoxExtractor::messageCallback, 
                          this);
-       scene_number_ = nh_.param<int>("scene_number", -1);
+       scene_number_ = nh_.param<int>("/clio_node/scene_number", -1);
     }
 
 NothingBBoxExtractor::~NothingBBoxExtractor(){
