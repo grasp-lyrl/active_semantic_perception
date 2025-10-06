@@ -84,6 +84,8 @@ roslaunch clio_ros realsense.launch
 cd src/active_semantic_perception/exploration/scripts
 python exploration_pipeline.py
 ```
+## Acknowledgment
+The mapping part of our pipeline is based on [Clio](https://github.com/MIT-SPARK/Clio) whose excellent work enabled us to implement our approach quickly.
 
 ## Citation
 ```
