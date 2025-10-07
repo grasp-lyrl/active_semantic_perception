@@ -90,6 +90,13 @@ roslaunch clio_ros realsense.launch
 cd src/active_semantic_perception/exploration/scripts
 python exploration_pipeline.py
 ```
+
+### Troubleshooting
+
+#### High Memory Usage
+If you experience high memory usage when running the pipeline, try the following:
+- Set occlusion check to 'false' in clio.launch
+
 ## Acknowledgment
 The mapping part of our pipeline builds upon [Clio](https://github.com/MIT-SPARK/Clio) and [vS-Graphs](https://github.com/snt-arg/visual_sgraphs), whose excellent work helped us implement our approach quickly.
 

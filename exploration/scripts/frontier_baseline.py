@@ -834,14 +834,13 @@ def setup_keyboard_listener(pipeline_instance):
 
 if __name__ == '__main__':
     try:
-        with open("config/frontier_config.yaml", "r") as f:
+        with open("../config/frontier_config.yaml", "r") as f:
             raw_cfg = yaml.safe_load(f)
         camera_cfg = CameraConfig(**raw_cfg["CAMERA_CONFIG"])
         config = PipelineConfig(**{**raw_cfg, "CAMERA_CONFIG": camera_cfg})
-        print(config)
-    #     pipeline = FrontierPipeline(config)
-    #     setup_keyboard_listener(pipeline)
-    #     pipeline.run_pipeline()
+        pipeline = FrontierPipeline(config)
+        setup_keyboard_listener(pipeline)
+        pipeline.run_pipeline()
     except rospy.ROSInterruptException:
         rospy.loginfo("ROS interrupt received. Shutting down.")
     except Exception as e:
