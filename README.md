@@ -11,6 +11,12 @@ We show using qualitative and quantitative experiments that our approach can pin
 
 <img src="figure/method_fig.png" alt="Pipeline Overview">
 
+## Presentation Demo
+<p align="center">
+  <a href="https://youtu.be/LF2Adx0pqb0">
+    <img src="https://i.ibb.co/nsmvKySC/youtube-video-pic.png" alt="demo" />
+  </a>
+</p>
 
 ## Setup
 ### Install Pangolin
@@ -32,7 +38,7 @@ catkin init
 catkin config -DCMAKE_BUILD_TYPE=Release -DSEMANTIC_INFERENCE_USE_TRT=OFF
 catkin config --skiplist khronos_eval
 cd src
-git clone --recursive git@github.com:bearyi26/active_semantic_perception.git
+git clone --recursive git@github.com:grasp-lyrl/active_semantic_perception.git
 vcs import ./active_semantic_perception/mapping < active_semantic_perception/install/active_semantic_perception.rosinstall
 rosdep install --from-paths . --ignore-src -r -y
 cd ..
@@ -85,9 +91,11 @@ cd src/active_semantic_perception/exploration/scripts
 python exploration_pipeline.py
 ```
 ## Acknowledgment
-The mapping part of our pipeline is based on [Clio](https://github.com/MIT-SPARK/Clio) whose excellent work enabled us to implement our approach quickly.
+The mapping part of our pipeline builds upon [Clio](https://github.com/MIT-SPARK/Clio) and [vS-Graphs](https://github.com/snt-arg/visual_sgraphs), whose excellent work helped us implement our approach quickly.
 
 ## Citation
 ```
 
 ```
+## Contact
+If you have any question, feel free to email huayit@seas.upenn.edu.
