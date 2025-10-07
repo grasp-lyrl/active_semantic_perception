@@ -14,7 +14,7 @@ We show using qualitative and quantitative experiments that our approach can pin
 ## Presentation Demo
 <p align="center">
   <a href="https://youtu.be/LF2Adx0pqb0">
-    <img src="https://i.ibb.co/fdT2YF4q/youtube-video-pic.png" alt="demo" />
+    <img src="figure/video_pic.png" alt="demo" />
   </a>
 </p>
 
