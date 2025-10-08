@@ -70,66 +70,6 @@ class PipelineConfig:
     MAXIMUM_CORNER_ATTEMPTS: int
     CAMERA_CONFIG: CameraConfig
 
-# ## -----------------------------------------------------------------------------
-# ## Pipeline Configuration
-# ## -----------------------------------------------------------------------------
-# @dataclass(frozen=True)
-# class CameraConfig:
-#     fx: float = 320.0
-#     fy: float = 240.0
-#     cx: float = 319.5
-#     cy: float = 239.5
-#     width: int = 640
-#     height: int = 480
-#     near_clip: float = 0.5
-#     max_range: float = 3.0
-
-# class PipelineConfig:
-#     """Central configuration for the entire pipeline."""
-
-#     # --- Habitat Simulation ---
-#     SCENE_DATASET_CONFIG = '/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/hm3d_annotated_basis.scene_dataset_config.json'
-#     # 00871
-#     SCENE_ID = '/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/val/00871-VBzV5z6i1WS/VBzV5z6i1WS.basis.glb'
-#     # 00853
-#     # SCENE_ID = "/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/val/00853-5cdEh9F2hJL/5cdEh9F2hJL.basis.glb"
-#     # 00573
-#     # SCENE_ID = "/home/apple/Work/catkin_ws/habitat_datasets/hm3d_datasets/train/00573-1zDbEdygBeW/1zDbEdygBeW.basis.glb"
-#     AGENT_HEIGHT = 1.1
-
-#     # --- ROS Topics & Frames ---
-#     RGB_TOPIC = '/dominic/forward/color/image_raw'
-#     DEPTH_TOPIC = '/dominic/forward/depth/image_rect_raw'
-#     MID_PATH_TOPIC = '/planned_mid_path'
-#     LOCAL_PATH_TOPIC = '/planned_local_path'
-#     WORLD_FRAME = 'world'
-#     HABITAT_FRAME = 'world_habitat'
-#     AGENT_FRAME = 'dominic/forward_link'
-
-#     # --- Occupancy Grid Configuration ---
-#     MERGED_OCCUPANCY_GRID_TOPIC = '/gvd_merged_map'
-#     OCCUPANCY_GRAPH_COUNT = 2
-#     OCCUPANCY_GRID_TOPIC_PREFIX = '/clio_node/graph'
-#     INFLATION_RADIUS = 0.15
-
-#     BASE_DIRECTORY = '/home/apple/Work/scene_graph_processing/Summer_research/Frontier_00871'
-#     MAPPING_DIRECTORY = '/home/apple/Work/exp_pipeline_ws/src/hydra/output/realsense/backend'
-#     SCENE_GRAPH_FILENAMES = ['graph0_dsg.json', 'graph1_dsg.json']
-#     FILE_WAIT_TIMEOUT_S = 10
-#     MIN_DSG_FILE_SIZE_BYTES = 1000
-
-#     # --- Navigation Parameters ---
-#     TURN_STEP_DEG = 1.5
-#     MOVE_STEP_M = 0.075
-#     DISTANCE_THRESHOLD_M = 0.25
-#     TURN_THRESHOLD_RAD = math.radians(10.0)
-#     MINIMUM_NAVIGATION_DURATION = 13.0
-#     UNKNOWN_CELL_THRESHOLD = 0.4
-#     MAXIMUM_CORNER_ATTEMPTS = 5
-
-#     # --- Camera Configuration ---
-#     CAMERA_CONFIG = CameraConfig()
-
 ## -----------------------------------------------------------------------------
 ## Utility Functions
 ## -----------------------------------------------------------------------------

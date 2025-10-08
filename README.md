@@ -1,4 +1,4 @@
-# Active Semantic Perception ([Paper])
+# Active Semantic Perception ([Paper](https://arxiv.org/abs/2510.05430))
 Authors: Huayi Tang, Pratik Chaudhari
 
 ## Abstract
@@ -102,7 +102,15 @@ The mapping part of our pipeline builds upon [Clio](https://github.com/MIT-SPARK
 
 ## Citation
 ```
-
+@misc{tang2025activesemanticperception,
+      title={Active Semantic Perception}, 
+      author={Huayi Tang and Pratik Chaudhari},
+      year={2025},
+      eprint={2510.05430},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2510.05430}, 
+}
 ```
 ## Contact
 If you have any question, feel free to email huayit@seas.upenn.edu.
